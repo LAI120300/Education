@@ -1,0 +1,128 @@
+"""
+----Conjugate gradient method for five - dimensional problems----
+    Developed in Python IDE of Pycharm Version 2019.3.4
+    Author and programmer: zhipeng Lai(赖志鹏)
+    Student number:S2202W0206
+    Date:(2023.5.11)
+    e-Mail: 2605862241@qq.com
+    references:
+    [1]白清顺,孙靖民,梁迎春. 高等学校"十一五"规划教材 机械优化设计[M]. 机械工业出版社, 2007.
+    [2]Wang L, Cao Q, Zhang Z, et al. Artificial rabbits optimization: A new bio-inspired meta-heuristic algorithm
+    for solving engineering optimization problems[J]. Engineering Applications of Artificial Intelligence, 2022, 114: 105082.
+"""
+#import sympy、numpy and math module
+import math
+from sympy import *
+import numpy as np
+"""
+============variable definition================
+"""
+Dim = 5         #设计变量维度
+Maxiter = 100
+x1, x2, x3, x4, x5, a0 = symbols('x1 x2 x3 x4 x5 a0')   #设计变量x1,x2,x3,x4,x5
+Xo = [1, 1, 1, 1, 1]   #迭代初始点
+e = 0.001                #收敛判断，梯度的模<e，则迭代结束
+"""
+ The algorithm tests three simple classical unimodal functions, which are Sphere，Step and Schwefel 1.2.
+"""
+#fx = x1**2 + x2**2 + x3**2 + x4**2 + x5**2                                          #目标函数Sphere，
+#fx = (x1+0.5)**2 + (x2+0.5)**2 + (x3+0.5)**2 + (x4+0.5)**2 + (x5+0.5)**2            #目标函数Step
+fx = x1**2 + (x1+x2)**2 + (x1+x2+x3)**2 + (x1+x2+x3+x4)**2 + (x1+x2+x3+x4+x5)**2     #目标函数Schwefel 1.2
+array_1 = np.zeros((Maxiter,Dim))                           #初始化，存储迭代点
+array_2 = np.zeros((Maxiter,Dim))                           #初始化，存储梯度方向
+array_3 = np.zeros((Maxiter,))                              #初始化，存储梯度模
+array_4 = np.zeros((Maxiter,Dim))                           #初始化，存储共轭方向
+"""
+input---design point x
+output---function value
+"""
+def f(x1,x2,x3,x4,x5):
+    #return x1**2 + x2**2 + x3**2 + x4**2 + x5**2
+    #return (x1+0.5)**2 + (x2+0.5)**2 + (x3+0.5)**2 + (x4+0.5)**2 + (x5+0.5)**2
+    return x1**2 + (x1+x2)**2 + (x1+x2+x3)**2 + (x1+x2+x3+x4)**2 + (x1+x2+x3+x4+x5)**2
+"""
+input---Current iteration index
+Output---conjugate direction
+         the next iteration point   
+"""
+def result(index):
+    for num in range(0, Dim):
+        array_1[0][num] = Xo[num]
+    gradient = np.array([[diff(fx, x1).subs(x1, array_1[index-1][0]).subs(x2, array_1[index-1][1]).subs(x3, array_1[index-1][2]).subs(x4, array_1[index-1][3]).subs(x5, array_1[index-1][4]),
+                          diff(fx, x2).subs(x1, array_1[index-1][0]).subs(x2, array_1[index-1][1]).subs(x3, array_1[index-1][2]).subs(x4, array_1[index-1][3]).subs(x5, array_1[index-1][4]),
+                          diff(fx, x3).subs(x1, array_1[index-1][0]).subs(x2, array_1[index-1][1]).subs(x3, array_1[index-1][2]).subs(x4, array_1[index-1][3]).subs(x5, array_1[index-1][4]),
+                          diff(fx, x4).subs(x1, array_1[index-1][0]).subs(x2, array_1[index-1][1]).subs(x3, array_1[index-1][2]).subs(x4, array_1[index-1][3]).subs(x5, array_1[index-1][4]),
+                          diff(fx, x5).subs(x1, array_1[index-1][0]).subs(x2, array_1[index-1][1]).subs(x3, array_1[index-1][2]).subs(x4, array_1[index-1][3]).subs(x5, array_1[index-1][4])]])  # 梯度
+    for num in range(0, Dim):
+        array_4[index - 1][num] = -gradient[0][num]   #第一个搜索方向取初始点的负梯度方向
+    for num in range(0, Dim):
+        array_2[index-1][num] = gradient[0][num]      #存储梯度，方便求模以及共轭方向
+    gradient_mode = math.sqrt(array_2[index-1][0] ** 2 + array_2[index-1][1] ** 2 + array_2[index-1][2] ** 2 + array_2[index-1][3] ** 2 + array_2[index-1][4] ** 2)
+    array_3[index-1] = array_2[index-1][0] ** 2 + array_2[index-1][1] ** 2 + array_2[index-1][2] ** 2 + array_2[index-1][3] ** 2 + array_2[index-1][4] ** 2
+    print("初始点为Xo（1，1, 1, 1, 1）时，函数值为",f(array_1[0][0],array_1[0][1],array_1[0][2],array_1[0][3],array_1[0][4]),"梯度模=",gradient_mode)
+    while gradient_mode > e:
+        print("------开始迭代第",index,"次------")
+        X_x = array_1[index-1] + a0 * array_4[index - 1]                   #含有a0未知数
+        p = solve([diff(f(X_x[0],X_x[1],X_x[2],X_x[3],X_x[4]),a0)], [a0])  #解方程，得到a0
+        #可能会有重根，加if判断
+        if len(p) > 1 :
+            pp = p[0][0]
+        else:
+            pp = p[a0]
+        X_x = array_1[index-1] + pp * array_4[index - 1]    #得到迭代点的坐标
+        for num in range(0, Dim):
+            array_1[index][num] = X_x[num]                  #保存得到的迭代点坐标
+        gradient = np.array([[diff(fx, x1).subs(x1, array_1[index][0]).subs(x2, array_1[index][1]).subs(x3, array_1[index][2]).subs(x4, array_1[index][3]).subs(x5, array_1[index][4]),
+                              diff(fx, x2).subs(x1, array_1[index][0]).subs(x2, array_1[index][1]).subs(x3, array_1[index][2]).subs(x4, array_1[index][3]).subs(x5, array_1[index][4]),
+                              diff(fx, x3).subs(x1, array_1[index][0]).subs(x2, array_1[index][1]).subs(x3, array_1[index][2]).subs(x4, array_1[index][3]).subs(x5, array_1[index][4]),
+                              diff(fx, x4).subs(x1, array_1[index][0]).subs(x2, array_1[index][1]).subs(x3, array_1[index][2]).subs(x4, array_1[index][3]).subs(x5, array_1[index][4]),
+                              diff(fx, x5).subs(x1, array_1[index][0]).subs(x2, array_1[index][1]).subs(x3, array_1[index][2]).subs(x4, array_1[index][3]).subs(x5, array_1[index][4])]])     #梯度
+        for num in range(0, Dim):
+            array_2[index][num] = gradient[0][num]
+        gradient_mode = math.sqrt(array_2[index][0] ** 2 + array_2[index][1] ** 2 + array_2[index][2] ** 2 + array_2[index][3] ** 2 + array_2[index][4] ** 2)#梯度的模
+        array_3[index] = array_2[index][0] ** 2 + array_2[index][1] ** 2 + array_2[index][2] ** 2 + array_2[index][3] ** 2 + array_2[index][4] ** 2
+        Bo = array_3[index]/array_3[index-1]
+        array_4[index] = -array_2[index] + Bo*array_4[index-1]  #共轭方向
+        d1 = array_4[index]                 #存储共轭方向
+        print("第",index,"个共轭方向为：",array_4[index])
+        if gradient_mode <= e:  #判断精度要求
+            print("第",index,"次迭代点(",array_1[index][0],array_1[index][1],array_1[index][2],array_1[index][3],array_1[index][4],")的梯度模(gradient_mode)=",gradient_mode,"<=e,满足极值条件，迭代结束")
+            print("一共迭代了",index,"次，得到的最优解为X* =（",array_1[index][0],array_1[index][1],array_1[index][2],array_1[index][3],array_1[index][4],"),minf(x) = ",f(array_1[index][0],array_1[index][1],array_1[index][2],array_1[index][3],array_1[index][4]))
+            return 0   #得到结果，结束迭代
+        else:
+            print("第", index, "次迭代点(", array_1[index][0], array_1[index][1], array_1[index][2],array_1[index][3],array_1[index][4], ")的梯度模(gradient_mode)=", gradient_mode,">e,不满足条件，迭代继续")
+            index = index + 1   #不满足条件，继续迭代
+    else:
+        print("初始点的梯度模(gradient_mode)<=e,满足条件")  #初始点就是最优解的情况
+        return 0
+index = 1
+result(index) #调用result函数，迭代求解函数的极小值。
+
+"""
+以五维的Schwefel 1.2为例，终止条件设为梯度模小于0.001
+运行结果如下：
+初始点为Xo（1，1, 1, 1, 1）时，函数值为 55.0 梯度模= 51.807335387954474
+------开始迭代第 1 次------
+第 1 个共轭方向为： [ 0.79067522  0.35941744 -0.34086408 -0.98570125 -1.08839195]
+第 1 次迭代点( -0.2167553191489362 -0.1356382978723405 0.02659574468085113 0.26994680851063835 0.5944148936170213 )的梯度模(gradient_mode)= 1.7387739751396405 >e,不满足条件，迭代继续
+------开始迭代第 2 次------
+第 2 个共轭方向为： [-0.09284312  0.02888493  0.13014319  0.04238761 -0.19756862]
+第 2 次迭代点( 0.06555615260612613 -0.0073078989790433535 -0.0951101558301989 -0.08199892530897412 0.2058033315421811 )的梯度模(gradient_mode)= 0.25649234457690706 >e,不满足条件，迭代继续
+------开始迭代第 3 次------
+第 3 个共轭方向为： [ 0.01426266 -0.0170781  -0.01198859  0.03006699 -0.02050797]
+第 3 次迭代点( -0.017434579212542295 0.018511803001259715 0.021222405048752974 -0.04410943606923482 0.029200439551162943 )的梯度模(gradient_mode)= 0.04366845334304135 >e,不满足条件，迭代继续
+------开始迭代第 4 次------
+第 4 个共轭方向为： [-0.0012839   0.00288878 -0.00267479  0.00149788 -0.00051551]
+第 4 次迭代点( 0.0022461967804744687 -0.005053942755995092 0.004679576625955563 -0.0026205629105167244 0.0009018820406401888 )的梯度模(gradient_mode)= 0.004410561365894752 >e,不满足条件，迭代继续
+------开始迭代第 5 次------
+第 5 个共轭方向为： [2.23492703e-11 2.05258924e-11 1.70355694e-11 1.21725760e-11
+ 6.33753766e-12]
+第 5 次迭代点( -9.116891269700389e-13 -8.334721801617206e-13 -6.863355370145818e-13 -4.86022246753981e-13 -2.5124975884527334e-13 )的梯度模(gradient_mode)= 3.740787025858031e-11 <=e,满足极值条件，迭代结束
+一共迭代了 5 次，得到的最优解为X* =（ -9.116891269700389e-13 -8.334721801617206e-13 -6.863355370145818e-13 -4.86022246753981e-13 -2.5124975884527334e-13 ),minf(x) =  2.834195562412471e-23
+
+Process finished with exit code 0
+
+"""
+"""
+注：编程比较粗糙，有横向、纵向冗余。
+"""
